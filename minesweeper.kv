@@ -1,0 +1,221 @@
+#:import Factory kivy.factory.Factory
+#:import math math
+#:import os os
+
+
+Main:
+
+<Main@RelativeLayout>:
+    home_widget: home_widget
+    game_window: game_window
+    GameWindow:
+        id: game_window
+        gridBackground: gridBackground
+        detailWindow: detailsWindow
+        orientation: 'vertical'
+        disabled: True
+
+        GridBackground:
+            id: gridBackground
+            main_game_win: main_game_win
+            menu_widget: menu_widget
+            Image:
+                source: os.path.join('assets', 'Background.png')
+                pos_hint: {'center_x': .5, 'center_y': .5}
+            MainGameWindow:
+                menu_widget: menu_widget
+                id: main_game_win
+                pos_hint: {'center_x': .5, 'center_y': .5}
+                orientation: 'lr-tb'
+                size_hint: None, .9
+                width: self.height
+            MenuWidget:
+                id: menu_widget
+                opacity: main_game_win.opacityMenu
+                pos_hint: {'center_x': .5, 'center_y': .5}
+                size_hint: main_game_win.sizeMenu, main_game_win.sizeMenu
+                Label:
+                    font_name: os.path.join('assets', 'Computer_speak.ttf')
+                    size_hint: .8, .5
+                    pos_hint: {'center_x': .5, 'top': 1}
+                    text: main_game_win.textMenu
+                    font_size: self.height*.4
+                Label:
+                    font_name: os.path.join('assets', 'Computer_speak.ttf')
+                    size_hint: .5, .4
+                    pos_hint: {'center_x': .5, 'center_y': .5}
+                    text: 'Hints Used: '+str(main_game_win.hints)
+                    font_size: self.height*.3
+                Button:
+                    id: play_again
+                    font_name: os.path.join('assets', 'Computer_speak.ttf')
+                    background_normal: ''
+                    background_color: .3, .3, .2
+                    size_hint: 1, .3
+                    text: 'Play Again?'
+                    pos_hint: {'center_x': .5, 'bottom': 0}
+                    on_press:
+                        main_game_win.disable_details_win = False
+                        main_game_win.sizeMenu = 0
+                        main_game_win.opacityMenu = 0
+                        root.add_widget(home_widget)
+                        root.home_widget.play_buttons.add_widget(root.home_widget.play_buttons.verify)
+                        main_game_win.clear_widgets()
+                        main_game_win.initialize_all()
+                        main_game_win.opacity = 1
+                        main_game_win.cellOpened = 0
+                        main_game_win.hints = 0
+
+        DetailsWindow:
+            timer_widget: timer_widget
+            id: detailsWindow
+            size_hint: 1, .2
+            disabled: main_game_win.disable_details_win
+            ImageButton:
+                id: hint
+                size_hint: 1, .9
+                pos_hint: {'center_x': .5, 'center_y': .5}
+                source: os.path.join('assets', 'BulbOff.png')
+                on_press:
+                    gridBackground.main_game_win.show_hint()
+                    self.source = os.path.join('assets', 'BulbOn.png')
+
+                on_release:
+                    self.source = os.path.join('assets', 'BulbOff.png')
+            TimerWidget:
+                stop_timer: main_game_win.stop_timer
+                id: timer_widget
+
+            ImageButton:
+                id: flag
+                size_hint: 1, .9
+                pos_hint: {'center_x': .5, 'center_y': .5}
+                source: os.path.join('assets', 'FlagButton.png') if main_game_win.flagMode == False else os.path.join('assets', 'FlagLight.png')
+                on_press:
+                    gridBackground.main_game_win.flagMode = True
+
+    HomeWidget:
+        id: home_widget
+        play_buttons: play_buttons
+        orientation: 'vertical'
+        canvas.before:
+            Color:
+                rgba: (.3, 0, 0, .7)
+            Rectangle:
+                size: self.size
+                pos: self.pos
+
+        Label:
+            size_hint: 1, 1.2
+            font_name: os.path.join('assets', 'Computer_speak.ttf')
+            font_size: self.height*.2
+            text: 'MINESWEEPER'
+
+        DetailsBox:
+            cols: 2
+            rows: 2
+            Label:
+                font_name: os.path.join('assets', 'Computer_speak.ttf')
+                text: 'number of Cells: '
+            TextInput:
+                id: num_cells
+                halign: 'center'
+                input_filter: 'int'
+                foreground_color: 1, 1, 1
+                font_size: self.height*.45
+                font_name: os.path.join('assets', 'Computer_speak.ttf')
+                background_color: .3, .3, .3
+                text: '100'
+
+            Label:
+                font_name: os.path.join('assets', 'Computer_speak.ttf')
+                text: 'number of Bombs: '
+            TextInput:
+                id: num_bombs
+                halign: 'center'
+                input_filter: 'int'
+                font_size: self.height*.45
+                foreground_color: 1, 1, 1
+                font_name: os.path.join('assets', 'Computer_speak.ttf')
+                background_color: .3, .3, .3
+                text: '15'
+
+        PlayButtons:
+            id: play_buttons
+            verify: verify
+            size_hint: 1, .5
+            Button:
+                pos_hint: {'center_x':.5, 'center_y':.5}
+                id: play
+                background_normal: ''
+                background_color: .3, .3, .2
+                font_name: os.path.join('assets', 'Computer_speak.ttf')
+                text: 'PLAY'
+
+                on_press:
+                    game_window.disabled = False
+                    root.remove_widget(home_widget)
+                    game_window.gridBackground.main_game_win.stop_timer = False
+                    game_window.detailWindow.timer_widget.initialize_time_start()
+                    game_window.gridBackground.main_game_win.clear_widgets()
+                    game_window.gridBackground.main_game_win.initialize_all()
+
+            Button:
+                pos_hint: {'center_x':.5, 'center_y':.5}
+                id: verify
+                font_name: os.path.join('assets', 'Computer_speak.ttf')
+                text: 'VERIFY'
+                on_press:
+                    if int(num_bombs.text) >= game_window.gridBackground.main_game_win.cells: Factory.PopupBombError().open()
+                    else: game_window.gridBackground.main_game_win.num_bombs = int(num_bombs.text)
+
+                    if (math.sqrt(int(num_cells.text)) - int(math.sqrt(int(num_cells.text)))) > 0:Factory.PopupSquareError().open()
+                    else: game_window.gridBackground.main_game_win.cells = int(num_cells.text)
+
+                    if (int(num_bombs.text) < game_window.gridBackground.main_game_win.cells and (math.sqrt(int(num_cells.text)) - int(math.sqrt(int(num_cells.text)))) == 0): play_buttons.remove_widget(verify)
+
+
+<GameWindow@BoxLayout>:
+
+<DetailsWindow@BoxLayout>:
+
+<MenuWidget>:
+
+<TimerWidget>:
+
+<HomeWidget@BoxLayout>:
+
+<DetailsBox@GridLayout>:
+
+<PlayButtons@RelativeLayout>
+
+<PopupSquareError@ModalView>:
+    size_hint: .5, .3
+    auto_dismiss: True
+    title: 'Invalid Cell Number!'
+    Label:
+        font_name: os.path.join('assets', 'Computer_speak.ttf')
+        font_size: self.width*.05
+        text: 'Cell number\n\nmust be a square number.\n\nexample: 25, 36, 100, 121...'
+
+<PopupBombError@ModalView>:
+    size_hint: .5, .3
+    auto_dismiss: True
+    title: 'Invalid Bomb Amount!'
+    Label:
+        font_name: os.path.join('assets', 'Computer_speak.ttf')
+        font_size: self.width*.05
+        text: 'Bomb number\n\nmust be less than\n\ncell number.'
+
+
+
+
+
+
+
+
+
+
+
+
+
